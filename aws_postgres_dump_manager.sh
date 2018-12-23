@@ -31,7 +31,7 @@ takeLocalDump()
 takePartialDump(){
    read  -p "Enter the orgin schema name of ${1}:" orgin
    read  -p "Enter the target schema name of ${2}:" target
-   printf "${RED}[$orgin]${NC} will be restored in ${RED}[$target]${NC} continue(Y)?"
+   printf "${1} ${RED}[$orgin]${NC} will be restored as ${2} ${RED}[$target]${NC} continue(Y)?"
    read -n 1 -p "" agree
    echo
    if [ $agree !=  "Y" ] && [ $agree !=  "y" ]
@@ -58,8 +58,16 @@ takePartialDump(){
    ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "ls -hs ~/auto_dump/backup_${orgin}_${timestamp}.dump"
    printf "${RED}File uploaded to ${2}${NC}"; echo
    # restore schema in server2
-   ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "sudo -u ubuntu psql ${6} -c \"CREATE SCHEMA IF NOT EXISTS ${orgin}\";
-   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${orgin}   -d ${6} ~/auto_dump/backup_${orgin}_${timestamp}.dump"
+   ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "sudo -u ubuntu psql -c \"DROP DATABASE temp\";
+   sudo -u ubuntu psql -c \"CREATE DATABASE temp\";
+   sudo -u ubuntu psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${orgin}\";
+   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${orgin} -d temp ~/auto_dump/backup_${orgin}_${timestamp}.dump;
+   sudo -u ubuntu psql temp -c \"ALTER SCHEMA ${orgin} RENAME TO ${target}\";
+   sudo -u postgres pg_dump -Fc -n ${target} temp > ~/auto_dump/backup_${orgin}_${timestamp}.dump;
+
+   sudo -u ubuntu psql ${6} -c \"CREATE SCHEMA IF NOT EXISTS ${target}\";
+   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${target} -d ${6} ~/auto_dump/backup_${orgin}_${timestamp}.dump"
+   
    echo "[$orgin] restored in [$target]..."
 }
 
