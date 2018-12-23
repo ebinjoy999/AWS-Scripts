@@ -3,17 +3,17 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 timestamp=$( date "+%Y.%m.%d-%H.%M.%S" )
 
-hostTest="www1.successmantram.com"
-hostProd="www1.bizdart.com"
-hostDev="www1.sdartdev.com"
+hostTest="-"
+hostProd="-"
+hostDev="-"
 
-hostTestDB="successdart_staging"
-hostProsDB="bizdart_production"
-hostDevDB="successdart_development"
+hostTestDB="-"
+hostProsDB="-"
+hostDevDB="s-"
 
-hostSSHDev="successdart_dev.pem"
-hostSSHTest="successdart_regression.pem"
-hostSSHProd="bizdart_prod.pem"
+hostSSHDev="-.pem"
+hostSSHTest="-.pem"
+hostSSHProd="-.pem"
 
 takeLocalDump()
 {
@@ -70,6 +70,19 @@ takePartialDump(){
    
    echo "[$orgin] restored in [$target]..."
 }
+
+
+# echo select a file:
+# num=1
+# for item in `ls -1 *.dump`
+# do
+#  #txt=`echo $item | sed s/mt/txt/`
+#  echo $num: $item: #`cat $txt` 
+#  num=`expr $num + 1`
+# done | tee menu.lst
+
+# read num
+# echo num = $num
 
 
 echo
