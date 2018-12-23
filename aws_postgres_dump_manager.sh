@@ -3,17 +3,17 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 timestamp=$( date "+%Y.%m.%d-%H.%M.%S" )
 
-hostTest="*"
-hostProd="*"
-hostDev="*"
+hostTest="www1.successmantram.com"
+hostProd="www1.bizdart.com"
+hostDev="www1.sdartdev.com"
 
-hostTestDB="*"
-hostProsDB="*"
-hostDevDB="*"
+hostTestDB="successdart_staging"
+hostProsDB="bizdart_production"
+hostDevDB="successdart_development"
 
-hostSSHDev="1.pem"
-hostSSHTest="2.pem"
-hostSSHProd="3.pem"
+hostSSHDev="successdart_dev.pem"
+hostSSHTest="successdart_regression.pem"
+hostSSHProd="bizdart_prod.pem"
 
 takeLocalDump()
 {
@@ -58,8 +58,9 @@ takePartialDump(){
    ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "ls -hs ~/auto_dump/backup_${orgin}_${timestamp}.dump"
    printf "${RED}File uploaded to ${2}${NC}"; echo
    # restore schema in server2
-
-   echo "[$orgin] will be restored in [$target]..."
+   ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "sudo -u ubuntu psql ${6} -c \"CREATE SCHEMA IF NOT EXISTS ${orgin}\";
+   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${orgin}   -d ${6} ~/auto_dump/backup_${orgin}_${timestamp}.dump"
+   echo "[$orgin] restored in [$target]..."
 }
 
 
@@ -106,7 +107,10 @@ case $VAR in
 		takeLocalDump $hostProd $hostProsDB $hostSSHProd
 		;;	
 
-	05) 
+	04) #dev-test
+        takePartialDump $hostDev $hostTest $hostSSHDev $hostSSHTest $hostDevDB $hostTestDB
+	    ;;	
+	05)  #test-dev
         takePartialDump $hostTest $hostDev $hostSSHTest $hostSSHDev $hostTestDB $hostDevDB
 	    ;;	
 	Q)  
