@@ -2,6 +2,7 @@
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 timestamp=$( date "+%Y.%m.%d-%H.%M.%S" )
+restoreSchema=""
 
 hostTest="www1.successmantram.com"
 hostProd="www1.bizdart.com"
@@ -67,6 +68,25 @@ takePartialDump(){
    echo "[$orgin] restored in [$target]..."
 }
 
+restoreLocalDump(){
+	ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "mkdir ~/auto_dump"
+	scp ${7} -i ~/.ec2/${3} ubuntu@${1}:~/auto_dump/
+   if [ ${6} !=  "Y" ] && [ ${6}} !=  "y" ]
+       then
+         ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "
+         sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner -d ${2} ~/auto_dump/${8}"
+         break; echo;
+   fi 
+  ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "sudo -u ubuntu psql -c \"DROP DATABASE temp\";
+   sudo -u ubuntu psql -c \"CREATE DATABASE temp\";
+   sudo -u ubuntu psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${4}\";
+   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${4} -d temp ~/auto_dump/${8};
+   sudo -u ubuntu psql temp -c \"ALTER SCHEMA ${4} RENAME TO ${5}\";
+   sudo -u postgres pg_dump -Fc -n ${5} temp > ~/auto_dump/${8};
+   sudo -u ubuntu psql ${2} -c \"CREATE SCHEMA IF NOT EXISTS ${5}\";
+   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${5} -d ${2} ~/auto_dump/${8}"
+   echo "[$4] restored in [$5]..."
+}
 
 echo
 	echo " ----------------------------------------------- "
@@ -119,13 +139,13 @@ case $VAR in
 	05)  #test-dev
         takePartialDump $hostTest $hostDev $hostSSHTest $hostSSHDev $hostTestDB $hostDevDB
 	    ;;	
-  06)  #prod-test
+    06)  #prod-test
         takePartialDump $hostProd $hostTest $hostSSHProd $hostSSHTest $hostProsDB $hostTestDB
-      ;;     
-  07)  #prod-dev
+        ;;     
+    07)  #prod-dev
         takePartialDump $hostProd $hostDev $hostSSHProd $hostSSHDev $hostProsDB $hostDevDB
-      ;;    
-  08)  #
+        ;;    
+    08)  #
         echo select a file:
         num=1
         itemsQ=`ls -1 *.dump`
@@ -148,12 +168,14 @@ case $VAR in
         echo
        if [ $isCompleteOption !=  "Y" ] && [ $isCompleteOption !=  "y" ]
        then
-          printf "Enter schema name to restore?"
-          read restoreSchema
+          printf "Enter schema(orgin) name to restore?"
+          read $restoreSchemaOrgin
+           printf "Enter schema(Target) name to restore?"
+          read $restoreSchemaTarget
         fi 
         case $instanceOption in
           1) #dev
-             
+             restoreLocalDump $hostDev $hostDevDB $hostSSHDev $restoreSchemaOrgin $restoreSchemaTarget isCompleteOption "${PWD}/${lines[$numb-1]}", "${lines[$numb-1]}"
             ;;
           2) #test
             ;;
