@@ -67,32 +67,6 @@ takePartialDump(){
    echo "[$orgin] restored in [$target]..."
 }
 
-getDumpFile() {
-  # echo select a file:
-  # num=1
-  # items=`ls -1 *.dump`
-  # for item in `ls -1 *.dump`
-  # do
-  #  #txt=`echo $item | sed s/mt/txt/`
-  #  echo $num: $item: #`cat $txt` 
-  #  num=`expr $num + 1`
-  # done | tee menu.lst
-  # echo "$items"
-  # read -n 2 -p ":" VAR
-echo select a file:
-num=1
-for item in `ls -1 *.dump`
-do
- #txt=`echo $item | sed s/mt/txt/`
- echo $num: $item: #`cat $txt` 
- num=`expr $num + 1`
-done | tee menu.lst
-
-read num
-echo num = $num
-  }
-
-
 
 echo
 	echo " ----------------------------------------------- "
@@ -152,9 +126,45 @@ case $VAR in
         takePartialDump $hostProd $hostDev $hostSSHProd $hostSSHDev $hostProsDB $hostDevDB
       ;;    
   08)  #
-         file=$(getDumpFile)
-         # echo "$file"
-      ;;           
+        echo select a file:
+        num=1
+        itemsQ=`ls -1 *.dump`
+        for item in `ls -1 *.dump`
+        do
+         #txt=`echo $item | sed s/mt/txt/`
+         echo $num: $item: #`cat $txt` 
+         num=`expr $num + 1`
+        done | tee menu.lst
+        read numb
+
+        IFS=$'\n' lines=($itemsQ)
+        echo; echo "Selected file ${PWD}/${lines[$numb-1]}"
+        echo
+        echo "Choose an instance"
+        printf " 1.${hostDev} \n 2.${hostTest} \n 3.${hostProd}\n"
+        read instanceOption
+        printf "Restore complete database?(Y)"
+         read isCompleteOption
+        echo
+       if [ $isCompleteOption !=  "Y" ] && [ $isCompleteOption !=  "y" ]
+       then
+          printf "Enter schema name to restore?"
+          read restoreSchema
+        fi 
+        case $instanceOption in
+          1) #dev
+             
+            ;;
+          2) #test
+            ;;
+          3) #prod
+            ;;
+          *)
+            echo "Sorry, wrong try"
+            break;
+             ;; 
+        esac  
+        ;;           
 	Q)  
 	    echo "exiting...see you again!"
 	     echo
