@@ -3,17 +3,15 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 timestamp=$( date "+%Y.%m.%d-%H.%M.%S" )
 
-hostTest="-"
-hostProd="-"
-hostDev="-"
-
-hostTestDB="-"
-hostProsDB="-"
-hostDevDB="s-"
-
-hostSSHDev="-.pem"
-hostSSHTest="-.pem"
-hostSSHProd="-.pem"
+hostTest="www1.successmantram.com"
+hostProd="www1.bizdart.com"
+hostDev="www1.sdartdev.com"
+hostTestDB="successdart_staging"
+hostProsDB="bizdart_production"
+hostDevDB="successdart_development"
+hostSSHDev="successdart_dev.pem"
+hostSSHTest="successdart_regression.pem"
+hostSSHProd="bizdart_prod.pem"
 
 takeLocalDump()
 {
@@ -64,25 +62,36 @@ takePartialDump(){
    sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${orgin} -d temp ~/auto_dump/backup_${orgin}_${timestamp}.dump;
    sudo -u ubuntu psql temp -c \"ALTER SCHEMA ${orgin} RENAME TO ${target}\";
    sudo -u postgres pg_dump -Fc -n ${target} temp > ~/auto_dump/backup_${orgin}_${timestamp}.dump;
-
    sudo -u ubuntu psql ${6} -c \"CREATE SCHEMA IF NOT EXISTS ${target}\";
    sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${target} -d ${6} ~/auto_dump/backup_${orgin}_${timestamp}.dump"
-   
    echo "[$orgin] restored in [$target]..."
 }
 
+getDumpFile() {
+  # echo select a file:
+  # num=1
+  # items=`ls -1 *.dump`
+  # for item in `ls -1 *.dump`
+  # do
+  #  #txt=`echo $item | sed s/mt/txt/`
+  #  echo $num: $item: #`cat $txt` 
+  #  num=`expr $num + 1`
+  # done | tee menu.lst
+  # echo "$items"
+  # read -n 2 -p ":" VAR
+echo select a file:
+num=1
+for item in `ls -1 *.dump`
+do
+ #txt=`echo $item | sed s/mt/txt/`
+ echo $num: $item: #`cat $txt` 
+ num=`expr $num + 1`
+done | tee menu.lst
 
-# echo select a file:
-# num=1
-# for item in `ls -1 *.dump`
-# do
-#  #txt=`echo $item | sed s/mt/txt/`
-#  echo $num: $item: #`cat $txt` 
-#  num=`expr $num + 1`
-# done | tee menu.lst
+read num
+echo num = $num
+  }
 
-# read num
-# echo num = $num
 
 
 echo
@@ -99,16 +108,18 @@ echo
 	echo "    01) Take Testing dump and save in local (${hostTest})"
 	echo "    02) Take Development dump and save in local(${hostDev})"
 	printf "    03) ${RED}Take Production dump and save in local(${hostProd})${NC}"
-    echo;
-    	echo "    04) Development dump to Testing(partial-DB)"
-    	echo "    05) Testing dump to Development(partial-DB)"
-    	printf "    06) Production dump to Testing(partial-DB)"; echo
-    	printf "    07) Production dump to Development(partial-DB)"
-     echo;
-    	printf "    XX) ${RED}Development dump to Testing(full-DB)${NC}";echo
-    	printf "    XX) ${RED}Testing dump to Development(full-DB)${NC}";echo
-    	printf "    XX) ${RED}Production dump to Testing(full-DB)${NC}" ;echo
-    	printf "    XX) ${RED}Production dump to Development(full-DB)${NC}"
+  echo;
+  echo "    04) Development dump to Testing(partial-DB)"
+  echo "    05) Testing dump to Development(partial-DB)"
+  printf "    06) Production dump to Testing(partial-DB)"; echo
+  printf "    07) Production dump to Development(partial-DB)"
+  echo;
+  printf "    08) Restore an instance from Local dump file"
+  echo;     
+  printf "    XX) ${RED}Development dump to Testing(full-DB)${NC}";echo
+  printf "    XX) ${RED}Testing dump to Development(full-DB)${NC}";echo
+  printf "    XX) ${RED}Production dump to Testing(full-DB)${NC}" ;echo
+  printf "    XX) ${RED}Production dump to Development(full-DB)${NC}"
 	echo
 
 while :
@@ -134,6 +145,16 @@ case $VAR in
 	05)  #test-dev
         takePartialDump $hostTest $hostDev $hostSSHTest $hostSSHDev $hostTestDB $hostDevDB
 	    ;;	
+  06)  #prod-test
+        takePartialDump $hostProd $hostTest $hostSSHProd $hostSSHTest $hostProsDB $hostTestDB
+      ;;     
+  07)  #prod-dev
+        takePartialDump $hostProd $hostDev $hostSSHProd $hostSSHDev $hostProsDB $hostDevDB
+      ;;    
+  08)  #
+         file=$(getDumpFile)
+         # echo "$file"
+      ;;           
 	Q)  
 	    echo "exiting...see you again!"
 	     echo
