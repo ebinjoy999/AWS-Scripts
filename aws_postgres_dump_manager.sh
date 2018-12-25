@@ -3,6 +3,8 @@ RED='\033[0;31m'
 NC='\033[0m' # No Color
 timestamp=$( date "+%Y.%m.%d-%H.%M.%S" )
 restoreSchema=""
+restoreSchemaOrgin="-"
+restoreSchemaTarget="-"
 
 hostTest="www1.successmantram.com"
 hostProd="www1.bizdart.com"
@@ -70,13 +72,18 @@ takePartialDump(){
 
 restoreLocalDump(){
 	ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "mkdir ~/auto_dump"
-	scp ${7} -i ~/.ec2/${3} ubuntu@${1}:~/auto_dump/
-   if [ ${6} !=  "Y" ] && [ ${6}} !=  "y" ]
+  echo "+++++++++++++++${1}  ${2} ${3} ${4} ${5} ${6} ${7} ${8}++++++++++++++++"
+	scp "${7}" -i ~/.ec2/${3} ubuntu@${1}:~/auto_dump/
+   if [ ${6} ==  "Y" ] || [ ${6} ==  "y" ]
        then
+        echo "Restoring full DB"
          ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "
          sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner -d ${2} ~/auto_dump/${8}"
-         break; echo;
+        echo "Restored DB" 
+         break;
    fi 
+  echo "Restoring partial DB"
+   echo "22222 sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${5} -d ${2} ~/auto_dump/${8}"
   ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "sudo -u ubuntu psql -c \"DROP DATABASE temp\";
    sudo -u ubuntu psql -c \"CREATE DATABASE temp\";
    sudo -u ubuntu psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${4}\";
@@ -169,13 +176,15 @@ case $VAR in
        if [ $isCompleteOption !=  "Y" ] && [ $isCompleteOption !=  "y" ]
        then
           printf "Enter schema(orgin) name to restore?"
-          read $restoreSchemaOrgin
+          read restoreSchemaOrgin
            printf "Enter schema(Target) name to restore?"
-          read $restoreSchemaTarget
+          read restoreSchemaTarget
         fi 
         case $instanceOption in
           1) #dev
-             restoreLocalDump $hostDev $hostDevDB $hostSSHDev $restoreSchemaOrgin $restoreSchemaTarget isCompleteOption "${PWD}/${lines[$numb-1]}", "${lines[$numb-1]}"
+             pathF="${PWD}/${lines[$numb-1]}"
+             fileName="${lines[$numb-1]}"
+             restoreLocalDump $hostDev $hostDevDB $hostSSHDev $restoreSchemaOrgin $restoreSchemaTarget $isCompleteOption $pathF $fileName
             ;;
           2) #test
             ;;
