@@ -187,8 +187,14 @@ case $VAR in
              restoreLocalDump $hostDev $hostDevDB $hostSSHDev $restoreSchemaOrgin $restoreSchemaTarget $isCompleteOption $pathF $fileName
             ;;
           2) #test
+             pathF="${PWD}/${lines[$numb-1]}"
+             fileName="${lines[$numb-1]}"
+             restoreLocalDump $hostTest $hostTestDB $hostSSHTest $restoreSchemaOrgin $restoreSchemaTarget $isCompleteOption $pathF $fileName
             ;;
           3) #prod
+             pathF="${PWD}/${lines[$numb-1]}"
+             fileName="${lines[$numb-1]}"
+             restoreLocalDump $hostProd $hostProsDB $hostSSHProd $restoreSchemaOrgin $restoreSchemaTarget $isCompleteOption $pathF $fileName
             ;;
           *)
             echo "Sorry, wrong try"
