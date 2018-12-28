@@ -54,26 +54,25 @@ takePartialDump(){
    scp -i ~/.ec2/${3} ubuntu@${1}:~/auto_dump/backup_${orgin}_${timestamp}.dump ${HOME}/Desktop/${5}/temp
    printf "${RED}File downloaded to local machine from ${1} ${NC}"; echo
    # upload server1 schema dump to server2
-   scp ${HOME}/Desktop/${5}/temp/backup_${orgin}_${timestamp}.dump -i ~/.ec2/${4} ubuntu@${2}:~/auto_dump/
+   scp -i ~/.ec2/${4} ${HOME}/Desktop/${5}/temp/backup_${orgin}_${timestamp}.dump ubuntu@${2}:~/auto_dump/
    echo
    ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "ls -hs ~/auto_dump/backup_${orgin}_${timestamp}.dump"
    printf "${RED}File uploaded to ${2}${NC}"; echo
    # restore schema in server2
-   ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "sudo -u ubuntu psql -c \"DROP DATABASE temp\";
-   sudo -u ubuntu psql -c \"CREATE DATABASE temp\";
-   sudo -u ubuntu psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${orgin}\";
+   ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "sudo -u postgres psql -c \"DROP DATABASE temp\";
+   sudo -u postgres psql -c \"CREATE DATABASE temp\";
+   sudo -u postgres psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${orgin}\";
    sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${orgin} -d temp ~/auto_dump/backup_${orgin}_${timestamp}.dump;
-   sudo -u ubuntu psql temp -c \"ALTER SCHEMA ${orgin} RENAME TO ${target}\";
+   sudo -u postgres psql temp -c \"ALTER SCHEMA ${orgin} RENAME TO ${target}\";
    sudo -u postgres pg_dump -Fc -n ${target} temp > ~/auto_dump/backup_${orgin}_${timestamp}.dump;
-   sudo -u ubuntu psql ${6} -c \"CREATE SCHEMA IF NOT EXISTS ${target}\";
+   sudo -u postgres psql ${6} -c \"CREATE SCHEMA IF NOT EXISTS ${target}\";
    sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${target} -d ${6} ~/auto_dump/backup_${orgin}_${timestamp}.dump"
    echo "[$orgin] restored in [$target]..."
 }
 
 restoreLocalDump(){
 	ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "mkdir ~/auto_dump"
-  echo "+++++++++++++++${1}  ${2} ${3} ${4} ${5} ${6} ${7} ${8}++++++++++++++++"
-	scp "${7}" -i ~/.ec2/${3} ubuntu@${1}:~/auto_dump/
+	scp -i ~/.ec2/${3} $7 ubuntu@${1}:~/auto_dump/
    if [ ${6} ==  "Y" ] || [ ${6} ==  "y" ]
        then
         echo "Restoring full DB"
@@ -83,14 +82,13 @@ restoreLocalDump(){
          break;
    fi 
   echo "Restoring partial DB"
-   echo "22222 sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${5} -d ${2} ~/auto_dump/${8}"
-  ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "sudo -u ubuntu psql -c \"DROP DATABASE temp\";
-   sudo -u ubuntu psql -c \"CREATE DATABASE temp\";
-   sudo -u ubuntu psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${4}\";
+  ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "sudo -u postgres psql -c \"DROP DATABASE temp\";
+   sudo -u postgres psql -c \"CREATE DATABASE temp\";
+   sudo -u postgres psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${4}\";
    sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${4} -d temp ~/auto_dump/${8};
-   sudo -u ubuntu psql temp -c \"ALTER SCHEMA ${4} RENAME TO ${5}\";
+   sudo -u postgres psql temp -c \"ALTER SCHEMA ${4} RENAME TO ${5}\";
    sudo -u postgres pg_dump -Fc -n ${5} temp > ~/auto_dump/${8};
-   sudo -u ubuntu psql ${2} -c \"CREATE SCHEMA IF NOT EXISTS ${5}\";
+   sudo -u postgres psql ${2} -c \"CREATE SCHEMA IF NOT EXISTS ${5}\";
    sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${5} -d ${2} ~/auto_dump/${8}"
    echo "[$4] restored in [$5]..."
 }
@@ -99,7 +97,8 @@ echo
 	echo " ----------------------------------------------- "
 	printf " ${RED}AWS Script for Successdart/Bizdart ${NC}      "; echo
 	echo " ----------------------------------------------- "
-	echo "Local dump path:${PWD}/[database_name]"
+	echo "Local dump download path:${PWD}/[database_name]"
+  echo "Local dump upload path:${PWD}"
 	printf "${RED}pem files expected at:${HOME}/.ec2 folder${NC}"; echo; 
 	echo "Expected file names"
 	echo "Testing: ${hostSSHTest}"
