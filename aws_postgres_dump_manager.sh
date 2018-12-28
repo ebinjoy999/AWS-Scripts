@@ -71,25 +71,34 @@ takePartialDump(){
 }
 
 restoreLocalDump(){
-	ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "mkdir ~/auto_dump"
+	ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "mkdir ~/auto_dump;"
 	scp -i ~/.ec2/${3} $7 ubuntu@${1}:~/auto_dump/
    if [ ${6} ==  "Y" ] || [ ${6} ==  "y" ]
        then
         echo "Restoring full DB"
          ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "
-         sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner -d ${2} ~/auto_dump/${8}"
-        echo "Restored DB" 
+          sudo service nginx stop;
+          sudo -u postgres psql -c \"SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = ${2}\";
+          sudo -u postgres psql -c \"DROP DATABASE ${2}\";
+          sudo -u postgres psql -c \"CREATE DATABASE ${2}\";
+          sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner -d ${2} ~/auto_dump/${8};
+          sudo service nginx start"
+          echo "Restored DB" 
          break;
    fi 
   echo "Restoring partial DB"
-  ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "sudo -u postgres psql -c \"DROP DATABASE temp\";
+  ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "
+   sudo service nginx stop;
+   sudo -u postgres psql -c \"DROP DATABASE temp\";
    sudo -u postgres psql -c \"CREATE DATABASE temp\";
    sudo -u postgres psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${4}\";
    sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${4} -d temp ~/auto_dump/${8};
    sudo -u postgres psql temp -c \"ALTER SCHEMA ${4} RENAME TO ${5}\";
    sudo -u postgres pg_dump -Fc -n ${5} temp > ~/auto_dump/${8};
+   sudo -u postgres psql ${2} -c \"DROP SCHEMA ${5} CASCADE\";
    sudo -u postgres psql ${2} -c \"CREATE SCHEMA IF NOT EXISTS ${5}\";
-   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${5} -d ${2} ~/auto_dump/${8}"
+   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${5} -d ${2} ~/auto_dump/${8};
+   sudo service nginx start"
    echo "[$4] restored in [$5]..."
 }
 
