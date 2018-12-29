@@ -50,7 +50,7 @@ takePartialDump(){
     # scp -3 -i ~/.ec2/${3} ubuntu@${1}:~/auto_dump/backup_${orgin}_${timestamp}.dump -i ~/.ec2/${4} ubuntu@${2}:~/auto_dump/backup_${orgin}_${timestamp}.dump
     # ssh -A -i ~/.ec2/${3} ubuntu@${1} scp ~/auto_dump/backup_${orgin}_${timestamp}.dump -i ~/.ec2/${4} ubuntu@${2}:~/auto_dump
    # downloading schema dump to local machine from server1
-   mkdir ${HOME}/Desktop/${5}/temp
+   mkdir -p ${HOME}/Desktop/${5}/temp
    scp -i ~/.ec2/${3} ubuntu@${1}:~/auto_dump/backup_${orgin}_${timestamp}.dump ${HOME}/Desktop/${5}/temp
    printf "${RED}File downloaded to local machine from ${1} ${NC}"; echo
    # upload server1 schema dump to server2
