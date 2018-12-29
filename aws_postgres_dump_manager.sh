@@ -23,7 +23,7 @@ takeLocalDump()
  sudo -u postgres pg_dump -Fc ''${2} > backup_${timestamp}.dump; echo; echo; ls -hs ~/auto_dump/backup_${timestamp}.dump"
  echo "Finished backup dump."
  echo "Moving dump file to Local..."
- mkdir ${HOME}/Desktop/${2}
+ mkdir -p ${HOME}/Desktop/${2}
  # copy above dump to local by scp
  scp -i ~/.ec2/${3} ubuntu@${1}:~/auto_dump/backup_${timestamp}.dump ${HOME}/Desktop/${2}
  printf "${RED}DB dump file stored at:${HOME}/Desktop/${2}/backup_${timestamp}.dump${NC}"
