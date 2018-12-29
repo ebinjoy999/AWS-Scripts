@@ -59,19 +59,23 @@ takePartialDump(){
    ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "ls -hs ~/auto_dump/backup_${orgin}_${timestamp}.dump"
    printf "${RED}File uploaded to ${2}${NC}"; echo
    # restore schema in server2
-   ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "sudo -u postgres psql -c \"DROP DATABASE temp\";
+   ssh -i ${HOME}/.ec2/${4} ubuntu@${2} "
+   sudo service nginx stop;
+   sudo -u postgres psql -c \"DROP DATABASE temp\";
    sudo -u postgres psql -c \"CREATE DATABASE temp\";
    sudo -u postgres psql temp -c \"CREATE SCHEMA IF NOT EXISTS ${orgin}\";
    sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${orgin} -d temp ~/auto_dump/backup_${orgin}_${timestamp}.dump;
    sudo -u postgres psql temp -c \"ALTER SCHEMA ${orgin} RENAME TO ${target}\";
    sudo -u postgres pg_dump -Fc -n ${target} temp > ~/auto_dump/backup_${orgin}_${timestamp}.dump;
+   sudo -u postgres psql ${6} -c \"DROP SCHEMA ${target} CASCADE\";
    sudo -u postgres psql ${6} -c \"CREATE SCHEMA IF NOT EXISTS ${target}\";
-   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${target} -d ${6} ~/auto_dump/backup_${orgin}_${timestamp}.dump"
+   sudo -u postgres pg_restore --verbose --clean --no-acl --no-owner  -n ${target} -d ${6} ~/auto_dump/backup_${orgin}_${timestamp}.dump;
+   sudo service nginx start"
    echo "[$orgin] restored in [$target]..."
 }
 
 restoreLocalDump(){
-	ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "mkdir ~/auto_dump;"
+	ssh -i ${HOME}/.ec2/${3} ubuntu@${1} "rm -r ~/auto_dump; mkdir ~/auto_dump;"
 	scp -i ~/.ec2/${3} $7 ubuntu@${1}:~/auto_dump/
    if [ ${6} ==  "Y" ] || [ ${6} ==  "y" ]
        then
@@ -227,5 +231,3 @@ case $VAR in
 		;;
   esac
  done
-
-
